@@ -1,0 +1,1635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ayurvedic Gyan – @yb</title>
+    <script src="https://cdn.tailwindcss.com">
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Yatra+One&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        devanagari: ['Yatra One', 'serif']
+                    },
+                    colors: {
+                        herbal: {
+                            50: '#fcfdfa', 100: '#eef3eb', 200: '#dae7d5', 300: '#b9d2b1',
+                            600: '#2c5d3b', 700: '#234a2f', 800: '#1b3824', 900: '#122518',
+                        },
+                        amber: { light: '#fdfbf7', accent: '#d4af37' }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .card-anim {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-anim:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px -10px rgba(37, 68, 48, 0.15);
+        }
+        .active-pill {
+            box-shadow: 0 4px 12px -2px rgba(44, 93, 59, 0.2);
+        }
+        .filter-search {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 9999px;
+            outline: none;
+            width: 100%;
+            background: white;
+            transition: border 0.2s;
+        }
+        .filter-search:focus {
+            border-color: #2c5d3b;
+            box-shadow: 0 0 0 2px rgba(44, 93, 59, 0.2);
+        }
+        .pills-wrapper {
+            max-height: 200px;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        .pills-wrapper.expanded {
+            max-height: 5000px;
+        }
+        .show-more-btn {
+            font-size: 0.7rem;
+            color: #2c5d3b;
+            cursor: pointer;
+            text-decoration: underline;
+            margin-top: 0.25rem;
+            display: inline-block;
+        }
+        #filter-sidebar {
+            transition: max-height 0.3s ease-in-out, opacity 0.3s ease;
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+        }
+        #filter-sidebar.open {
+            max-height: 2000px;
+            opacity: 1;
+        }
+        @media (min-width: 1024px) {
+            #filter-sidebar {
+                max-height: none !important;
+                opacity: 1 !important;
+                overflow: visible;
+            }
+            #filter-toggle {
+                display: none;
+            }
+        }
+
+        /* Always visible search bar on mobile/desktop */
+        #global-search-wrapper {
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            background: inherit;
+            padding: 0.5rem 0;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
+
+    <!-- HEADER -->
+    <header class="bg-gradient-to-r from-herbal-800 to-herbal-900 text-white shadow-md border-b border-herbal-700 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="bg-amber-accent/20 p-2 rounded-xl border border-amber-accent/30 text-amber-accent">
+                        <i class="fa-solid fa-seedling text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg sm:text-xl font-bold tracking-tight text-amber-light">Ayurveda <span class="text-amber-accent font-devanagari">Gyanrush</span></h1>
+                        <p class="text-[10px] text-herbal-200 font-light">Yadu Bhardwaj</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <div id="data-status-badge" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" id="status-ping"></span>
+                        <span id="status-text">Loading…</span>
+                    </div>
+                    <button id="filter-toggle" class="lg:hidden text-white text-xl p-2 hover:bg-white/10 rounded-full transition" aria-label="Toggle filters">
+                        <i class="fa-solid fa-sliders-h"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- GLOBAL SEARCH – always visible -->
+    <div id="global-search-wrapper" class="bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div class="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-magnifying-glass text-herbal-600 text-sm"></i>
+                    <input type="text" id="search-input" placeholder="Search plants, families ..."
+                    class="flex-1 bg-transparent border-0 focus:ring-0 text-sm placeholder:text-slate-400 outline-none" />
+                </div>
+                <p class="text-[10px] text-slate-900 mt-1 font-light leading-relaxed pl-7">
+                    <strong>Knowledge is Power</strong>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN -->
+    <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 flex flex-col lg:flex-row gap-6">
+
+        <!-- SIDEBAR (collapsible on mobile) – now only filters -->
+        <aside id="filter-sidebar" class="w-full lg:w-96 shrink-0 flex flex-col gap-5 transition-all duration-300">
+            <!-- Faceted Filters -->
+            <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200 flex flex-col gap-5">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h2 class="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-filter text-herbal-600"></i>
+                        Filters
+                    </h2>
+                    <button id="reset-filters-btn" onclick="resetFilters()" class="text-xs font-semibold text-rose-600 hover:text-rose-700 hover:underline flex items-center gap-1">
+                        <i class="fa-solid fa-rotate"></i> Reset
+                    </button>
+                </div>
+                <div class="flex flex-col gap-4 max-h-[60vh] overflow-y-auto custom-scrollbar pr-1" id="filter-container">
+
+                    <!-- Rasa -->
+                    <div class="border border-slate-100 rounded-2xl p-3 bg-slate-50/30" data-category="rasa">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center justify-between">
+                            <span>Rasas <span class="text-slate-400 font-normal text-[10px]">(Taste)</span></span>
+                            <span class="text-[10px] bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full font-bold" id="count-badge-rasa">0</span>
+                        </h3>
+                        <input type="text" class="filter-search mb-2" placeholder="Search rasa…" data-category="rasa" />
+                        <div class="pills-wrapper" id="pills-rasa-wrapper">
+                            <div id="pills-rasa" class="flex flex-wrap gap-1.5"></div>
+                        </div>
+                        <span class="show-more-btn" data-category="rasa">Show more</span>
+                    </div>
+
+                    <!-- Guna -->
+                    <div class="border border-slate-100 rounded-2xl p-3 bg-slate-50/30" data-category="guna">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center justify-between">
+                            <span>Gunas <span class="text-slate-400 font-normal text-[10px]">(Attributes)</span></span>
+                            <span class="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold" id="count-badge-guna">0</span>
+                        </h3>
+                        <input type="text" class="filter-search mb-2" placeholder="Search guna…" data-category="guna" />
+                        <div class="pills-wrapper" id="pills-guna-wrapper">
+                            <div id="pills-guna" class="flex flex-wrap gap-1.5"></div>
+                        </div>
+                        <span class="show-more-btn" data-category="guna">Show more</span>
+                    </div>
+
+                    <!-- Virya -->
+                    <div class="border border-slate-100 rounded-2xl p-3 bg-slate-50/30" data-category="virya">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center justify-between">
+                            <span>Viryas <span class="text-slate-400 font-normal text-[10px]">(Potency)</span></span>
+                            <span class="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-bold" id="count-badge-virya">0</span>
+                        </h3>
+                        <input type="text" class="filter-search mb-2" placeholder="Search virya…" data-category="virya" />
+                        <div class="pills-wrapper" id="pills-virya-wrapper">
+                            <div id="pills-virya" class="flex flex-wrap gap-1.5"></div>
+                        </div>
+                        <span class="show-more-btn" data-category="virya">Show more</span>
+                    </div>
+
+                    <!-- Vipaka -->
+                    <div class="border border-slate-100 rounded-2xl p-3 bg-slate-50/30" data-category="vipaka">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center justify-between">
+                            <span>Vipakas <span class="text-slate-400 font-normal text-[10px]">(Post-Digest)</span></span>
+                            <span class="text-[10px] bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full font-bold" id="count-badge-vipaka">0</span>
+                        </h3>
+                        <input type="text" class="filter-search mb-2" placeholder="Search vipaka…" data-category="vipaka" />
+                        <div class="pills-wrapper" id="pills-vipaka-wrapper">
+                            <div id="pills-vipaka" class="flex flex-wrap gap-1.5"></div>
+                        </div>
+                        <span class="show-more-btn" data-category="vipaka">Show more</span>
+                    </div>
+
+                    <!-- Plant Family -->
+                    <div class="border border-slate-100 rounded-2xl p-3 bg-slate-50/30" data-category="plant_family">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center justify-between">
+                            <span>Families <span class="text-slate-400 font-normal text-[10px]">(Botanical)</span></span>
+                            <span class="text-[10px] bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full font-bold" id="count-badge-plant_family">0</span>
+                        </h3>
+                        <input type="text" class="filter-search mb-2" placeholder="Search family…" data-category="plant_family" />
+                        <div class="pills-wrapper" id="pills-plant_family-wrapper">
+                            <div id="pills-plant_family" class="flex flex-wrap gap-1.5"></div>
+                        </div>
+                        <span class="show-more-btn" data-category="plant_family">Show more</span>
+                    </div>
+
+                    <!-- Sub Family -->
+                    <div class="border border-slate-100 rounded-2xl p-3 bg-slate-50/30" data-category="sub_family">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center justify-between">
+                            <span>Sub Families <span class="text-slate-400 font-normal text-[10px]">(Botanical)</span></span>
+                            <span class="text-[10px] bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full font-bold" id="count-badge-sub_family">0</span>
+                        </h3>
+                        <input type="text" class="filter-search mb-2" placeholder="Search sub-family…" data-category="sub_family" />
+                        <div class="pills-wrapper" id="pills-sub_family-wrapper">
+                            <div id="pills-sub_family" class="flex flex-wrap gap-1.5"></div>
+                        </div>
+                        <span class="show-more-btn" data-category="sub_family">Show more</span>
+                    </div>
+
+                    <!-- Karma (dynamic) -->
+                    <div class="border border-slate-100 rounded-2xl p-3 bg-slate-50/30" data-category="karma">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center justify-between">
+                            <span>Karmas <span class="text-slate-400 font-normal text-[10px]">(Therapeutics)</span></span>
+                            <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold" id="count-badge-karma">0</span>
+                        </h3>
+                        <input type="text" class="filter-search mb-2" placeholder="Search karma…" data-category="karma" />
+                        <div class="pills-wrapper" id="pills-karma-wrapper">
+                            <div id="pills-karma" class="flex flex-wrap gap-1.5"></div>
+                        </div>
+                        <span class="show-more-btn" data-category="karma">Show more</span>
+                    </div>
+
+                    <!-- Indications (Uses) dynamic -->
+                    <div class="border border-slate-100 rounded-2xl p-3 bg-slate-50/30" data-category="uses">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center justify-between">
+                            <span>Indications <span class="text-slate-400 font-normal text-[10px]">(Uses)</span></span>
+                            <span class="text-[10px] bg-cyan-100 text-cyan-800 px-2 py-0.5 rounded-full font-bold" id="count-badge-uses">0</span>
+                        </h3>
+                        <input type="text" class="filter-search mb-2" placeholder="Search indication…" data-category="uses" />
+                        <div class="pills-wrapper" id="pills-uses-wrapper">
+                            <div id="pills-uses" class="flex flex-wrap gap-1.5"></div>
+                        </div>
+                        <span class="show-more-btn" data-category="uses">Show more</span>
+                    </div>
+
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT (Results) -->
+        <section class="flex-1 flex flex-col gap-4">
+
+            <!-- Results Bar -->
+            <div class="bg-white px-5 py-4 rounded-3xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div>
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-widest font-sans">Active View</span>
+                    <h3 class="text-lg font-bold text-herbal-900 font-sans" id="result-count">Found 0 Plants</h3>
+                </div>
+                <div class="flex items-center gap-3 w-full sm:w-auto">
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider shrink-0" for="sort-select">Sort By</label>
+                    <select id="sort-select" onchange="handleSort()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-herbal-600 focus:border-transparent text-slate-700 w-full sm:w-44">
+                        <option value="name-asc">Official Name (A to Z)</option>
+                        <option value="name-desc">Official Name (Z to A)</option>
+                        <option value="id-asc">Ayurvedic Id (Ascending)</option>
+                        <option value="family-asc">Botanical Family</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Active badges -->
+            <div id="active-badges-container" class="flex flex-wrap gap-2 items-center"></div>
+
+            <!-- Cards Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5" id="plants-grid"></div>
+
+            <!-- Empty state -->
+            <div id="empty-state" class="hidden bg-white rounded-3xl border border-dashed border-slate-200 p-12 text-center max-w-lg mx-auto mt-8">
+                <div class="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fa-solid fa-ban text-2xl"></i>
+                </div>
+                <h4 class="text-slate-700 font-bold text-lg mb-1">No Ayurvedic Plants Match</h4>
+                <p class="text-slate-400 text-sm mb-4">Try checking your search spelling, clearing filters, or hitting Reset.</p>
+                <button onclick="resetFilters()" class="bg-herbal-700 hover:bg-herbal-800 text-white font-semibold text-xs px-5 py-2.5 rounded-xl transition-all">
+                    Reset All Filters
+                </button>
+            </div>
+
+            <!-- Load More -->
+            <div id="load-more-container" class="flex justify-center py-6 hidden">
+                <button id="load-more-btn" onclick="loadMoreHerbs()" class="bg-white border border-slate-200 text-herbal-700 hover:text-white hover:bg-herbal-700 font-bold text-xs px-6 py-3 rounded-xl shadow-sm transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-angles-down"></i>
+                    <span>Load More Herbs</span>
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- DETAIL MODAL -->
+    <div id="detail-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-4xl h-[90vh] md:h-[85vh] rounded-3xl shadow-2xl border border-slate-100 flex flex-col overflow-hidden relative transform scale-95 opacity-0 transition-all duration-300">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-herbal-800 to-herbal-800 text-white p-6 relative flex-shrink-0">
+                <button onclick="closeModal()" class="absolute right-5 top-5 bg-black/15 hover:bg-black/30 text-white w-8 h-8 rounded-full flex items-center justify-center transition-all">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 pr-8">
+                    <div>
+                        <span id="modal-latin-name" class="text-xs font-semibold tracking-wider text-amber-accent italic font-sans">Latin Name</span>
+                        <div class="flex items-baseline gap-3 mt-1">
+                            <h2 id="modal-official-name" class="text-2xl font-bold tracking-tight text-amber-light font-sans">Official Name</h2>
+                            <span id="modal-devanagari-name" class="text-xl text-amber-accent font-medium font-devanagari">देवनागरी</span>
+                        </div>
+                    </div>
+                    <div class="text-right flex flex-col">
+                        <span class="text-[10px] uppercase font-bold tracking-widest text-slate-300">Family / Sub-Family</span>
+                        <span id="modal-plant-family" class="text-xs font-semibold text-slate-105">---</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6">
+
+                <!-- Quick Props -->
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <div class="text-center p-2 border-r border-slate-200 last:border-none">
+                        <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Rasa</span>
+                        <span id="modal-rasa" class="text-xs font-bold text-slate-800 mt-1 block font-devanagari">---</span>
+                    </div>
+                    <div class="text-center p-2 border-r border-slate-200 last:border-none">
+                        <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Guna</span>
+                        <span id="modal-guna" class="text-xs font-bold text-slate-800 mt-1 block font-devanagari">---</span>
+                    </div>
+                    <div class="text-center p-2 border-r border-slate-200 last:border-none">
+                        <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Virya</span>
+                        <span id="modal-virya" class="text-xs font-bold text-slate-800 mt-1 block font-devanagari">---</span>
+                    </div>
+                    <div class="text-center p-2 border-r border-slate-200 last:border-none">
+                        <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Vipaka</span>
+                        <span id="modal-vipaka" class="text-xs font-bold text-slate-800 mt-1 block font-devanagari">---</span>
+                    </div>
+                    <div class="text-center p-2 last:border-none col-span-2 md:col-span-1">
+                        <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 font-sans">Part Used</span>
+                        <span id="modal-plant-part" class="text-xs font-bold text-emerald-700 mt-1 block font-sans">---</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Left -->
+                    <div class="md:col-span-2 space-y-6 font-sans">
+
+                        <div class="bg-amber-light/20 p-5 rounded-2xl border border-slate-100 space-y-3">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                                <i class="fa-solid fa-align-left text-herbal-600"></i> Pharmacognostical Description
+                            </h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <h4 class="text-xs font-semibold text-slate-600">Macroscopic:</h4>
+                                    <p id="modal-macro-desc" class="text-xs text-slate-600 font-light leading-relaxed mt-1">…</p>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-semibold text-slate-600">Microscopic:</h4>
+                                    <p id="modal-micro-desc" class="text-xs text-slate-600 font-light leading-relaxed mt-1">…</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-1">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Chemical Constituents</span>
+                                <p id="modal-constituents" class="text-xs text-slate-700 font-medium">---</p>
+                            </div>
+                            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-1">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Recommended Dosage</span>
+                                <p id="modal-dose" class="text-xs text-slate-700 font-medium">---</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-2">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Important Formulations</h3>
+                            <p id="modal-formulations" class="text-xs text-slate-700 font-medium">---</p>
+                        </div>
+
+                        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Identity, Purity &amp; Strength</h3>
+                            <div class="grid grid-cols-2 gap-3" id="modal-specifications-grid"></div>
+                        </div>
+                    </div>
+
+                    <!-- Right -->
+                    <div class="space-y-6">
+                        <div class="bg-herbal-50 p-5 rounded-2xl border border-herbal-100 space-y-4">
+                            <div>
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Therapeutic Action (Karma)</h3>
+                                <div id="modal-karma-tags" class="flex flex-wrap gap-1.5 font-sans"></div>
+                            </div>
+                            <hr class="border-herbal-100/60" />
+                            <div>
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-sans">Therapeutic Uses</h3>
+                                <div id="modal-uses-tags" class="flex flex-wrap gap-1.5 font-sans"></div>
+                            </div>
+                        </div>
+                        <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100 space-y-3 font-sans">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Vernacular Names</h3>
+                            <div class="max-h-56 overflow-y-auto custom-scrollbar pr-1 space-y-2 text-xs" id="modal-vernacular-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 font-sans"></div>
+
+    <!-- FOOTER -->
+    <footer class="bg-herbal-900 text-herbal-100/60 py-6 border-t border-herbal-800 text-center text-xs mt-auto">
+        <div class="max-w-7xl mx-auto px-4 font-sans">
+            <p>© Adapted From Ayurvedic Pharmacopoeia of India &amp; Strictly For Education Purpose only.</p>
+        </div>
+    </footer>
+
+    <!-- ======================== JAVASCRIPT ======================== -->
+    <script>
+        // ---- BASE STANDARDS (will be extended dynamically) ----
+        const STANDARDS = {
+            rasa: {
+                "madhura": { dev: "मधुर", lat: "Madhura", eng: "Sweet" },
+                "amla": { dev: "अम्ल", lat: "Amla", eng: "Sour" },
+                "lavana": { dev: "लवण", lat: "Lavaṇa", eng: "Salty" },
+                "katu": { dev: "कटु", lat: "Kaṭu", eng: "Pungent" },
+                "tikta": { dev: "तिक्त", lat: "Tikta", eng: "Bitter" },
+                "kasaya": { dev: "कषाय", lat: "Kaṣāya", eng: "Astringent" }
+            },
+            guna: {
+                "laghu": { dev: "लघु", lat: "Laghu", eng: "Light" },
+                "ruksa": { dev: "रूक्ष", lat: "Rūkṣa", eng: "Dry" },
+                "guru": { dev: "गुरु", lat: "Guru", eng: "Heavy" },
+                "snigdha": { dev: "स्निग्ध", lat: "Snigdha", eng: "Unctuous" },
+                "tiksna": { dev: "तीक्ष्ण", lat: "Tīkṣṇa", eng: "Sharp" },
+                "sita": { dev: "शीत", lat: "Śīta", eng: "Cold" },
+                "usna": { dev: "उष्ण", lat: "Uṣṇa", eng: "Hot" },
+                "sthira": { dev: "स्थिर", lat: "Sthira", eng: "Stable" },
+                "sara": { dev: "सर", lat: "Sara", eng: "Mobile" },
+                "manda": { dev: "मन्द", lat: "Manda", eng: "Dull/Slow" },
+                "mrdu": { dev: "मृदु", lat: "Mṛdu", eng: "Soft" },
+                "visada": { dev: "विशद", lat: "Viśada", eng: "Clear" },
+                "picchila": { dev: "पिच्छिल", lat: "Picchila", eng: "Slimy" },
+                "drava": { dev: "द्रव", lat: "Drava", eng: "Liquid" },
+                "khara": { dev: "खर", lat: "Khara", eng: "Rough" },
+                "sandra": { dev: "सान्द्र", lat: "Sāndra", eng: "Dense" },
+                "kathina": { dev: "कठिन", lat: "Kaṭhina", eng: "Hard" },
+                "suksma": { dev: "सूक्ष्म", lat: "Sūkṣma", eng: "Subtle" },
+                "sthula": { dev: "स्थूल", lat: "Sthūla", eng: "Gross" },
+                "slaksna": { dev: "श्लक्ष्ण", lat: "Ślakṣṇa", eng: "Smooth" }
+            },
+            virya: {
+                "usna": { dev: "उष्ण", lat: "Uṣṇa", eng: "Hot" },
+                "sita": { dev: "शीत", lat: "Śīta", eng: "Cold" },
+                "anusnasita": { dev: "अनुष्णशीत", lat: "Anuṣṇāśīta", eng: "Neutral/Temperate" }
+            },
+            vipaka: {
+                "madhura": { dev: "मधुर", lat: "Madhura", eng: "Sweet" },
+                "amla": { dev: "अम्ल", lat: "Amla", eng: "Sour" },
+                "katu": { dev: "कटु", lat: "Kaṭu", eng: "Pungent" }
+            },
+            plant_family: {
+                "piperaceae": { dev: "पिप्पल्यादि कुल", lat: "Piperaceae", eng: "Pepper Family" },
+                "boraginaceae": { dev: "शारदादि कुल", lat: "Boraginaceae", eng: "Borage Family" },
+                "phyllanthaceae": { dev: "आमलक्यादि कुल", lat: "Phyllanthaceae", eng: "Amla Family" },
+                "fabaceae": { dev: "शिम्बी कुल", lat: "Fabaceae", eng: "Legume Family" },
+                "solanaceae": { dev: "कण्टकार्यादि कुल", lat: "Solanaceae", eng: "Nightshade Family" },
+                "menispermaceae": { dev: "गुडूच्यादि कुल", lat: "Menispermaceae", eng: "Moonseed Family" },
+                "apocynaceae": { dev: "अर्कादि कुल", lat: "Apocynaceae", eng: "Dogbane Family" },
+                "moraceae": { dev: "वटादि कुल", lat: "Moraceae", eng: "Mulberry Family" },
+                "cleomaceae": { dev: "अजगन्धा कुल", lat: "Cleomaceae", eng: "Spider Flower Family" },
+                "apiaceae": { dev: "शतपुष्पादि कुल", lat: "Apiaceae", eng: "Carrot Family" },
+                "linaceae": { dev: "अतसी कुल", lat: "Linaceae", eng: "Flax Family" },
+                "malvaceae": { dev: "बला कुल", lat: "Malvaceae", eng: "Mallow Family" },
+                "ranunculaceae": { dev: "अतिविषा कुल", lat: "Ranunculaceae", eng: "Buttercup Family" },
+                "combretaceae": { dev: "हरीतकी कुल", lat: "Combretaceae", eng: "Combretum Family" },
+                "rutaceae": { dev: "बिल्व कुल", lat: "Rutaceae", eng: "Rue Family" },
+                "plumbaginaceae": { dev: "चित्रक कुल", lat: "Plumbaginaceae", eng: "Leadwort Family" },
+                "lythraceae": { dev: "धातकी कुल", lat: "Lythraceae", eng: "Loosestrife Family" },
+                "euphorbiaceae": { dev: "एरण्ड कुल", lat: "Euphorbiaceae", eng: "Spurge Family" },
+                "lamiaceae": { dev: "गम्भारी कुल", lat: "Lamiaceae", eng: "Mint Family" },
+                "zygophyllaceae": { dev: "गोक्षुर कुल", lat: "Zygophyllaceae", eng: "Caltrop Family" },
+                "burseraceae": { dev: "गुग्गुलु कुल", lat: "Burseraceae", eng: "Bursera Family" },
+                "zingiberaceae": { dev: "हरिद्रा कुल", lat: "Zingiberaceae", eng: "Ginger Family" },
+                "caprifoliaceae": { dev: "जटामांसी कुल", lat: "Caprifoliaceae", eng: "Honeysuckle Family" },
+                "myristicaceae": { dev: "जातीफल कुल", lat: "Myristicaceae", eng: "Nutmeg Family" },
+                "asphodelaceae": { dev: "कन्यासार कुल", lat: "Asphodelaceae", eng: "Asphodel Family" },
+                "anacardiaceae": { dev: "कर्कटशृङ्गी कुल", lat: "Anacardiaceae", eng: "Cashew Family" },
+                "cyperaceae": { dev: "कसेरु कुल", lat: "Cyperaceae", eng: "Sedge Family" },
+                "pandanaceae": { dev: "केतकी कुल", lat: "Pandanaceae", eng: "Screwpine Family" },
+                "gentianaceae": { dev: "किराततिक्त कुल", lat: "Gentianaceae", eng: "Gentian Family" },
+                "asteraceae": { dev: "कुष्ठ कुल", lat: "Asteraceae", eng: "Aster Family" },
+                "myrtaceae": { dev: "लवङ्ग कुल", lat: "Myrtaceae", eng: "Myrtle Family" },
+                "symplocaceae": { dev: "लोध्र कुल", lat: "Symplocaceae", eng: "Symplocos Family" },
+                "rubiaceae": { dev: "मदन कुल", lat: "Rubiaceae", eng: "Madder Family" },
+                "saxifragaceae": { dev: "पाषाणभेद कुल", lat: "Saxifragaceae", eng: "Saxifrage Family" },
+                "arecaceae": { dev: "पूग कुल", lat: "Arecaceae", eng: "Palm Family" },
+                "nyctaginaceae": { dev: "पुनर्नवा कुल", lat: "Nyctaginaceae", eng: "Four o'clock Family" },
+                "lauraceae": { dev: "त्वक् कुल", lat: "Lauraceae", eng: "Laurel Family" },
+                "capparaceae": { dev: "वरुण कुल", lat: "Capparaceae", eng: "Caper Family" },
+                "acanthaceae": { dev: "वासा कुल", lat: "Acanthaceae", eng: "Acanthus Family" },
+                "primulaceae": { dev: "विडङ्ग कुल", lat: "Primulaceae", eng: "Primrose Family" },
+                "cannabaceae": { dev: "विजया कुल", lat: "Cannabaceae", eng: "Hemp Family" },
+                "juglandaceae": { dev: "अक्षोद कुल", lat: "Juglandaceae", eng: "Walnut Family" },
+                "amaranthaceae": { dev: "अपामार्ग कुल", lat: "Amaranthaceae", eng: "Amaranth Family" },
+                "portulacaceae": { dev: "कुजुप्पा कुल", lat: "Portulacaceae", eng: "Purslane Family" },
+                "sapotaceae": { dev: "मधूक कुल", lat: "Sapotaceae", eng: "Sapota Family" },
+                "simaroubaceae": { dev: "अरलु कुल", lat: "Simaroubaceae", eng: "Simarouba Family" },
+                "vitaceae": { dev: "अस्थिसंहार कुल", lat: "Vitaceae", eng: "Grape Family" },
+                "calophyllaceae": { dev: "नागकेसर कुल", lat: "Calophyllaceae", eng: "Calophyllum Family" },
+                "meliaceae": { dev: "निम्ब कुल", lat: "Meliaceae", eng: "Neem Family" },
+                "ulmaceae": { dev: "चिरबिल्व कुल", lat: "Ulmaceae", eng: "Elm Family" },
+                "bignoniaceae": { dev: "पाटला कुल", lat: "Bignoniaceae", eng: "Trumpet Creeper Family" },
+                "pteridaceae": { dev: "हंसपादी कुल", lat: "Pteridaceae", eng: "Fern Family" },
+                "cupressaceae": { dev: "हपुषा कुल", lat: "Cupressaceae", eng: "Cypress Family" },
+                "aristolochiaceae": { dev: "ईश्वरी कुल", lat: "Aristolochiaceae", eng: "Birthwort Family" },
+                "oleaceae": { dev: "जाती कुल", lat: "Oleaceae", eng: "Olive Family" },
+                "musaceae": { dev: "कदली कुल", lat: "Musaceae", eng: "Banana Family" },
+                "martyniaceae": { dev: "काकनासिका कुल", lat: "Martyniaceae", eng: "Martynia Family" },
+                "liliaceae": { dev: "काकोली कुल", lat: "Liliaceae", eng: "Lily Family" },
+                "nelumbonaceae": { dev: "कमल कुल", lat: "Nelumbonaceae", eng: "Lotus Family" },
+                "rhamnaceae": { dev: "कोल कुल", lat: "Rhamnaceae", eng: "Buckthorn Family" },
+                "cucurbitaceae": { dev: "कोशातकी कुल", lat: "Cucurbitaceae", eng: "Gourd Family" },
+                "colchicaceae": { dev: "लाङ्गली कुल", lat: "Colchicaceae", eng: "Colchicum Family" },
+                "amaryllidaceae": { dev: "लशुन कुल", lat: "Amaryllidaceae", eng: "Amaryllis Family" },
+                "oxalidaceae": { dev: "चाङ्गेरी कुल", lat: "Oxalidaceae", eng: "Oxalis Family" },
+                "convolvulaceae": { dev: "शङ्खपुष्पी कुल", lat: "Convolvulaceae", eng: "Morning glory Family" },
+                "santalaceae": { dev: "श्वेतचन्दन कुल", lat: "Santalaceae", eng: "Sandalwood Family" },
+                "taxaceae": { dev: "स्थौनेय कुल", lat: "Taxaceae", eng: "Yew Family" },
+                "poaceae": { dev: "शालि कुल", lat: "Poaceae", eng: "Grass Family" },
+                "berberidaceae": { dev: "दारुहरिद्रा कुल", lat: "Berberidaceae", eng: "Barberry Family" },
+                "salvadoraceae": { dev: "पीलु कुल", lat: "Salvadoraceae", eng: "Salvadora Family" },
+                "sapindaceae": { dev: "कर्णस्फोट कुल", lat: "Sapindaceae", eng: "Soapberry Family" },
+                "lecythidaceae": { dev: "निचुल कुल", lat: "Lecythidaceae", eng: "Brazil nut Family" },
+                "pinaceae": { dev: "सरल कुल", lat: "Pinaceae", eng: "Pine Family" }
+            },
+            sub_family: {
+                "piperoideae": { dev: "पिप्पली उपकुल", lat: "Piperoideae", eng: "Piperoid Subfamily" },
+                "heliotropioideae": { dev: "सूर्यावर्ती उपकुल", lat: "Heliotropioideae", eng: "Heliotrope Subfamily" },
+                "phyllanthoideae": { dev: "भूम्यामलकी उपकुल", lat: "Phyllanthoideae", eng: "Phyllanthoid Subfamily" },
+                "caesalpinioideae": { dev: "पूतीकरञ्ज उपकुल", lat: "Caesalpinioideae", eng: "Caesalpinioid Subfamily" },
+                "solanoideae": { dev: "धत्तूर उपकुल", lat: "Solanoideae", eng: "Solanoid Subfamily" },
+                "chasmantheroideae": { dev: "गुडूची उपकुल", lat: "Chasmantheroideae", eng: "Chasmantheroid Subfamily" },
+                "apioideae": { dev: "शतपुष्पोपकुल", lat: "Apioideae", eng: "Apioid Subfamily" },
+                "faboideae": { dev: "शिम्बी उपकुल", lat: "Faboideae", eng: "Faboideae Subfamily" },
+                "mimosoideae": { dev: "बब्बूल उपकुल", lat: "Mimosoideae", eng: "Mimosoid Subfamily" },
+                "aurantioideae": { dev: "बिल्वोपकुल", lat: "Aurantioideae", eng: "Aurantioid Subfamily" },
+                "plumbaginoideae": { dev: "चित्रकोपकुल", lat: "Plumbaginoideae", eng: "Plumbaginoid Subfamily" },
+                "acalyphoideae": { dev: "एरण्डोपकुल", lat: "Acalyphoideae", eng: "Acalyphoid Subfamily" },
+                "viticoideae": { dev: "गम्भार्युपकुल", lat: "Viticoideae", eng: "Viticoid Subfamily" },
+                "zingiberoideae": { dev: "हरिद्रोपकुल", lat: "Zingiberoideae", eng: "Zingiberoid Subfamily" },
+                "alpinioideae": { dev: "एलोपकुल", lat: "Alpinioideae", eng: "Alpinioid Subfamily" },
+                "valerianoideae": { dev: "जटामांस्युपकुल", lat: "Valerianoideae", eng: "Valerianoid Subfamily" },
+                "carduoideae": { dev: "कुष्ठोपकुल", lat: "Carduoideae", eng: "Carduoid Subfamily" },
+                "myrtoideae": { dev: "लवङ्गोपकुल", lat: "Myrtoideae", eng: "Myrtoid Subfamily" },
+                "asclepiadoideae": { dev: "अर्कोपकुल", lat: "Asclepiadoideae", eng: "Asclepiad Subfamily" },
+                "ranunculoideae": { dev: "अतिविषोपकुल", lat: "Ranunculoideae", eng: "Ranunculoid Subfamily" },
+                "malvoideae": { dev: "बलोपकुल", lat: "Malvoideae", eng: "Malvoid Subfamily" },
+                "euphorbioideae": { dev: "स्नुह्युपकुल", lat: "Euphorbioideae", eng: "Euphorbioid Subfamily" },
+                "crotonoideae": { dev: "जयपालोपकुल", lat: "Crotonoideae", eng: "Crotonoid Subfamily" },
+                "rauvolfioideae": { dev: "सर्पगन्धोपकुल", lat: "Rauvolfioideae", eng: "Rauvolfioid Subfamily" },
+                "apocynoideae": { dev: "अर्कोपकुल", lat: "Apocynoideae", eng: "Apocynoid Subfamily" },
+                "panicoideae": { dev: "शाल्युपकुल", lat: "Panicoideae", eng: "Panicoid Subfamily" },
+                "chloridoideae": { dev: "दूर्वोपकुल", lat: "Chloridoideae", eng: "Chloridoid Subfamily" },
+                "pinoideae": { dev: "सरलोपकुल", lat: "Pinoideae", eng: "Pinoid Subfamily" },
+                "cucurbitoideae": { dev: "कोशात्क्युपकुल", lat: "Cucurbitoideae", eng: "Cucurbitoid Subfamily" },
+                "nepetoideae": { dev: "तुलस्युपकुल", lat: "Nepetoideae", eng: "Nepetoid Subfamily" },
+                "lamioideae": { dev: "स्पृक्कोपकुल", lat: "Lamioideae", eng: "Lamioid Subfamily" },
+                "ajugoideae": { dev: "अग्निमन्थोपकुल", lat: "Ajugoideae", eng: "Ajugoid Subfamily" },
+                "rubioideae": { dev: "प्रसारिण्युपकुल", lat: "Rubioideae", eng: "Rubioid Subfamily" },
+                "ixoroideae": { dev: "मदनोपकुल", lat: "Ixoroideae", eng: "Ixoroid Subfamily" },
+                "cinchonoideae": { dev: "कदम्बोपकुल", lat: "Cinchonoideae", eng: "Cinchonoid Subfamily" },
+                "vernonioideae": { dev: "सहदेव्युपकुल", lat: "Vernonioideae", eng: "Vernonioid Subfamily" },
+                "asteroideae": { dev: "कुष्ठोपकुल", lat: "Asteroideae", eng: "Asteroid Subfamily" },
+                "gentianoideae": { dev: "किराततिक्तोपकुल", lat: "Gentianoideae", eng: "Gentianoid Subfamily" },
+                "cordioideae": { dev: "हस्तिशुण्ड्युपकुल", lat: "Cordioideae", eng: "Cordioid Subfamily" },
+                "boraginoideae": { dev: "गोजिह्वोपकुल", lat: "Boraginoideae", eng: "Boraginoid Subfamily" },
+                "acanthoideae": { dev: "वासोपकुल", lat: "Acanthoideae", eng: "Acanthoid Subfamily" },
+                "amaranthoideae": { dev: "अपामार्गोपकुल", lat: "Amaranthoideae", eng: "Amaranthoid Subfamily" },
+                "grewioideae": { dev: "गाङ्गेर्युपकुल", lat: "Grewioideae", eng: "Grewioid Subfamily" },
+                "spondioideae": { dev: "आम्रातकुपकुल", lat: "Spondioideae", eng: "Spondioid Subfamily" },
+                "anacardioideae": { dev: "भल्लातकोपकुल", lat: "Anacardioideae", eng: "Anacardioid Subfamily" },
+                "myrsinoideae": { dev: "विडङ्गोपकुल", lat: "Myrsinoideae", eng: "Myrsinoid Subfamily" },
+                "rutoideae": { dev: "तेजोवत्युपकुल", lat: "Rutoideae", eng: "Rutoid Subfamily" },
+                "melioideae": { dev: "निम्बोपकुल", lat: "Melioideae", eng: "Melioid Subfamily" },
+                "swietenioideae": { dev: "तुन्युपकुल", lat: "Swietenioideae", eng: "Swietenioid Subfamily" },
+                "calamoideae": { dev: "वेत्रोपकुल", lat: "Calamoideae", eng: "Calamoid Subfamily" },
+                "arecoideae": { dev: "पूगोपकुल", lat: "Arecoideae", eng: "Arecoid Subfamily" },
+                "coryphoideae": { dev: "तालोपकुल", lat: "Coryphoideae", eng: "Coryphoid Subfamily" },
+                "nymphaeoideae": { dev: "कुमुदोपकुल", lat: "Nymphaeoideae", eng: "Nymphaeoid Subfamily" },
+                "amygdaloideae": { dev: "अक्षोदोपकुल", lat: "Amygdaloideae", eng: "Amygdaloid Subfamily" },
+                "rosaceae_sub": { dev: "पद्मकोपकुल", lat: "Rosoideae", eng: "Rosoid Subfamily" },
+                "oleoideae": { dev: "जात्युपकुल", lat: "Oleoideae", eng: "Oleoid Subfamily" },
+                "pteridoideae": { dev: "हंसपाद्युपकुल", lat: "Pteridoideae", eng: "Pteridoid Subfamily" },
+                "cupressoideae": { dev: "हपुषोपकुल", lat: "Cupressoideae", eng: "Cupressoid Subfamily" },
+                "aristolochioideae": { dev: "ईश्वर्युपकुल", lat: "Aristolochioideae", eng: "Aristolochioid Subfamily" },
+                "nolanoidae": { dev: "मेदोपकुल", lat: "Nolanoidae", eng: "Nolanoid Subfamily" },
+                "lilioideae": { dev: "काकोल्युपकुल", lat: "Lilioideae", eng: "Lilioid Subfamily" },
+                "allioideae": { dev: "लशुनोपकुल", lat: "Allioideae", eng: "Allioid Subfamily" },
+                "convallarioideae": { dev: "आरारोटोपकुल", lat: "Convallarioideae", eng: "Convallarioid Subfamily" }
+            },
+            // Pre-curated core vocabulary with real English meanings.
+            // Any additional terms found in the dataset are added dynamically
+            // on top of this (see populateDynamicStandards / registerStandard).
+            karma: {
+                "vatahara": { dev: "वातहर", lat: "Vātahara", eng: "Vata Pacifying" },
+                "kaphahara": { dev: "कफहर", lat: "Kaphahara", eng: "Kapha Pacifying" },
+                "pittahara": { dev: "पित्तहर", lat: "Pittahara", eng: "Pitta Pacifying" },
+                "tridosadamaka": { dev: "त्रिदोषशामक", lat: "Tridoṣaśāmaka", eng: "Tridosha Calming" },
+                "tridosajit": { dev: "त्रिदोषजित्", lat: "Tridoṣajit", eng: "Tridosha Balancing" },
+                "dipana": { dev: "दीपन", lat: "Dīpana", eng: "Digestive Fire Appetizer" },
+                "pacana": { dev: "पाचन", lat: "Pācana", eng: "Digestive" },
+                "vrsya": { dev: "वृष्य", lat: "Vṛṣya", eng: "Aphrodisiac" },
+                "rasayana": { dev: "रसायन", lat: "Rasāyana", eng: "Rejuvenator" },
+                "caksusya": { dev: "चक्षुष्य", lat: "Cakṣuṣya", eng: "Eye Tonic" },
+                "sothahara": { dev: "शोथहर", lat: "Śothahara", eng: "Anti-inflammatory" },
+                "vranasodhaka": { dev: "व्रणशोधक", lat: "Vraṇasodhaka", eng: "Wound Cleansing" },
+                "vranaropaka": { dev: "व्रणरोपक", lat: "Vraṇaropaka", eng: "Wound Healing" },
+                "balya": { dev: "बल्य", lat: "Balya", eng: "Strength Promoter" },
+                "visaghna": { dev: "विषघ्न", lat: "Viṣaghna", eng: "Antitoxic" },
+                "kusthaghna": { dev: "कुष्ठघ्न", lat: "Kuṣṭhaghna", eng: "Skin-Disease Curative" },
+                "krmighna": { dev: "कृमिघ्न", lat: "Kṛmighna", eng: "Anthelmintic" },
+                "grahi": { dev: "ग्राही", lat: "Grāhī", eng: "Intestinal Absorber" },
+                "svasahara": { dev: "श्वासहर", lat: "Śvāsahara", eng: "Asthma Relieving" },
+                "kasahara": { dev: "कासहर", lat: "Kāsahara", eng: "Cough Alleviating" },
+                "rocana": { dev: "रोचन", lat: "Rocana", eng: "Appetizer" },
+                "anulomana": { dev: "अनुलोमन", lat: "Anulomana", eng: "Peristalsis Promoter" },
+                "stambhana": { dev: "स्तम्भन", lat: "Stambhana", eng: "Astringent / Haemostatic" },
+                "bhedana": { dev: "भेदन", lat: "Bhedana", eng: "Laxative" },
+                "lekhanani": { dev: "लेखन", lat: "Lekhana", eng: "Scraping" },
+                "virecana": { dev: "विरेचन", lat: "Virecana", eng: "Purgative" },
+                "vamana": { dev: "वमन", lat: "Vamana", eng: "Emesis Inducer" },
+                "śirovirecana": { dev: "शिरोविरेचन", lat: "Śirovirecana", eng: "Nasal Purgative" },
+                "hṛdya": { dev: "हृद्य", lat: "Hṛdya", eng: "Cardiac Tonic" },
+                "medhya": { dev: "मेध्य", lat: "Medhya", eng: "Nerve Tonic" },
+                "vājīkaraṇa": { dev: "वाजीकरण", lat: "Vājīkaraṇa", eng: "Aphrodisiac" },
+                "ārtavajanana": { dev: "आर्तवजनन", lat: "Ārtavajanana", eng: "Emmenagogue" },
+                "garbhāsayavisodhana": { dev: "गर्भाशयविशोधन", lat: "Garbhāsayaviśodhana", eng: "Uterine Cleanser" },
+                "garbhāsayottejaka": { dev: "गर्भाशयोत्तेजक", lat: "Garbhāsayottejaka", eng: "Uterine Stimulant" },
+                "garbhasthaiyakara": { dev: "गर्भस्थैर्यकर", lat: "Garbhasthairyakara", eng: "Uterine Stabiliser" },
+                "garbhasthāpana": { dev: "गर्भस्थापन", lat: "Garbhasthāpana", eng: "Embryo Support" },
+                "garbhavṛddhikara": { dev: "गर्भवृद्धिकर", lat: "Garbhavṛddhikara", eng: "Foetal Growth" },
+                "grahabādhāghna": { dev: "ग्रहबाधाघ्न", lat: "Grahabādhāghna", eng: "Anti-demonic" },
+                "grahanāsana": { dev: "ग्रहणासन", lat: "Grahaṇāsana", eng: "Anti-malabsorption" }
+            },
+            uses: {
+                "sotha": { dev: "शोथ", lat: "Śotha", eng: "Edema & Swelling" },
+                "vrana": { dev: "व्रण", lat: "Vraṇa", eng: "Wounds & Ulcers" },
+                "kandu": { dev: "कण्डू", lat: "Kaṇḍū", eng: "Pruritus" },
+                "jvara": { dev: "ज्वर", lat: "Jvara", eng: "Fever" },
+                "raktapitta": { dev: "रक्तपित्त", lat: "Raktapitta", eng: "Hemorrhagic Disorders" },
+                "amlapitta": { dev: "अम्लपित्त", lat: "Amlapitta", eng: "Hyperacidity" },
+                "prameha": { dev: "प्रमेह", lat: "Prameha", eng: "Urinary / Diabetes" },
+                "daha": { dev: "दाह", lat: "Dāha", eng: "Burning Sensation" },
+                "asrgdara": { dev: "असृग्दर", lat: "Asṛgdara", eng: "Menorrhagia" },
+                "apaci": { dev: "अपची", lat: "Apacī", eng: "Lymphadenitis" },
+                "raktadosa": { dev: "रक्तदोष", lat: "Raktadoṣa", eng: "Blood Impurities" },
+                "ksaya": { dev: "क्षय", lat: "Kṣaya", eng: "Consumption/TB" },
+                "daurbalya": { dev: "दौर्बल्य", lat: "Daurbalya", eng: "General Weakness" },
+                "vataroga": { dev: "वातरोग", lat: "Vātaroga", eng: "Neurological Disorders" },
+                "klaibya": { dev: "क्लैब्य", lat: "Klaibya", eng: "Sexual Dysfunction" },
+                "kustha": { dev: "कुष्ठ", lat: "Kuṣṭha", eng: "Chronic Skin Diseases" },
+                "vatarakta": { dev: "वातरक्त", lat: "Vātarakta", eng: "Gouty Arthritis" },
+                "kamala": { dev: "कामला", lat: "Kāmalā", eng: "Jaundice" },
+                "pandu": { dev: "पाण्डु", lat: "Pāṇdu", eng: "Anemia" },
+                "visavikara": { dev: "विषविकार", lat: "Viṣavikāra", eng: "Toxemia" },
+                "tvagroga": { dev: "त्वग्रोग", lat: "Tvagroga", eng: "Eczema & Dermatitis" },
+                "svasa": { dev: "श्वास", lat: "Śvāsa", eng: "Asthma / Dyspnea" },
+                "kasa": { dev: "कास", lat: "Kāsa", eng: "Bronchitis / Cough" },
+                "pliha": { dev: "प्लीहा", lat: "Plīhā", eng: "Spleen Disorders" },
+                "ajirna": { dev: "अजीर्ण", lat: "Ajīrṇa", eng: "Dyspepsia" }
+            },
+            formulations: {
+                "hastisundi kvatha": { dev: "हस्तिशुण्डी क्वाथ", lat: "Hastiśuṇḍī Kvātha", eng: "Hastiśuṇḍi Decoction" },
+                "cyavanaprasa": { dev: "च्यवनप्राश", lat: "Cyavanaprāśa", eng: "Chyawanprash" },
+                "triphala curna": { dev: "त्रिफला चूर्ण", lat: "Triphalā Cūrṇa", eng: "Triphala Powder" },
+                "asokarista": { dev: "अशोकारिष्ट", lat: "Aśokāriṣṭa", eng: "Ashoka Tonic" },
+                "asokagrhta": { dev: "अशोकघृत", lat: "Aśokaghṛta", eng: "Ashoka Ghee" },
+                "asvagandhadyarista": { dev: "अश्वगन्धारिष्ट", lat: "Aśvagandhāriṣṭa", eng: "Ashwagandha Tonic" },
+                "asvagandha curna": { dev: "अश्वगन्धा चूर्ण", lat: "Aśvagandhā Cūrṇa", eng: "Ashwagandha Powder" },
+                "amritarista": { dev: "अमृतारिष्ट", lat: "Amṛtāriṣṭa", eng: "Guduchi Elixir" },
+                "guduci sattva": { dev: "गुडूची सत्त्व", lat: "Guḍūcī Sattva", eng: "Guduchi Extract" },
+                "samsamani vati": { dev: "संशमनी वटी", lat: "Saṁśamanī Vaṭī", eng: "Guduchi Tablet" },
+                "haridra khanda": { dev: "हरिद्रा खण्ड", lat: "Haridrā Khaṇda", eng: "Turmeric Granules" },
+                "candraprabha vati": { dev: "चन्द्रप्रभा वटी", lat: "Candraprabhā Vaṭī", eng: "Chandraprabha Tablet" },
+                "pippalyadi asava": { dev: "पिप्पल्यादि आसव", lat: "Pippalyādi Āsava", eng: "Pippali Tonic" }
+            }
+        };
+
+        // ---- DEVANAGARI MAP ----
+        const DEVANAGARI_MAP = {
+            "Ajagandha": "अजगन्धा", "Ajamoda": "अजमोदा", "Amalaki": "आमलकी", "Aragavadha": "आरग्वध",
+            "Arka": "अर्क", "Asana": "असन", "Ashoka": "अशोक", "Asvagandha": "अश्वगन्धा",
+            "Asvattha": "अश्वत्थ", "Atasi": "अतसी", "Atibala": "अतिविषा", "Ativisha": "अतिविषा",
+            "Babbula": "बब्बुल", "Bakuchi": "बाकुची", "Bibhitaka": "बिभीतक", "Bilva": "बिल्व",
+            "Chandrasua": "चन्द्रशूर", "Chitraka": "चित्रक", "Dhanyaka": "धान्यक", "Dhataki": "धातकी",
+            "Eranda": "एरण्ड", "Gambhari": "गम्भारी", "Gokshura": "गोक्षुर", "Guduchi": "गुडूची",
+            "Guggulu": "गुग्गुलु", "Gunja": "गुञ्जा", "Haridra": "हरिद्रा", "Haritaki": "हरीतकी",
+            "Hingu": "हिङ्गु", "Jatamansi": "जटामान्सी", "Jatiphala": "जातीफल", "Kampilla": "कम्पिल्लक",
+            "Kanchanara": "काञ्चनार", "Kankola": "कङ्कोल", "Kaṇṭakārī": "कण्टकारी", "Kanyasara": "कन्यासार",
+            "Karanja": "करञ्ज", "Karavira": "करवीर", "Karkatashringi": "कर्कटशृङ्गी", "Karpasa": "कार्पास",
+            "Kaseru": "कसेरु", "Ketaki": "केतकी", "Khadira": "खदिर", "Kiratatikta": "किराततिक्त",
+            "Krishnajiraka": "कृष्णजीरक", "Kulattha": "कुलत्थ", "Kushta": "कुष्ठ", "Kutaja": "कुटज",
+            "Lavanga": "लवङ्ग", "Lodhra": "लोध्र", "Madana": "मदन", "Mishreya": "मिश्रेया",
+            "Nyagrodha": "न्यग्रोध", "Pashanabheda": "पाषाणभेद", "Patha": "पाठा", "Puga": "पूग",
+            "Punarnava": "पुनर्नवा", "Saptaparna": "सप्तपर्ण", "Shati": "शटी", "Snuhi": "स्नुही",
+            "Sukshmaila": "सूक्षैला", "Shunthi": "शुण्ठी", "Svarnapatri": "स्वर्णपत्री", "Svetajiraka": "श्वेतजीरक",
+            "Sveta Sariva": "श्वेतसारिवा", "Tagara": "तगर", "Tamalaki": "तामलकी", "Tvak": "त्वक्",
+            "Tvakpatra": "त्वक्पत्र", "Udumbara": "उदुम्बर", "Upakunchika": "उपकुञ्चिका", "Varuna": "वरुण",
+            "Vasa": "वासा", "Vidanga": "विडङ्ग", "Vijaya": "विजया", "Yashti": "यष्टी",
+            "Yavani": "यवानी", "Hastiśuṇḍī": "हस्तिशुण्डी", "Hastisundi": "हस्तिशुण्डी", "Pippali": "पिप्पली"
+        };
+
+        // ---- FALLBACK DATA (just a sample, will be replaced) ----
+        const FALLBACK_INITIAL_DATA = [
+            { "id": 1, "official_name": "Pippali", "latin_name": "Piper longum Linn.", "plant_family": "Piperaceae",
+                "plant_subfamily": "Piperoideae", "plant_part": "Dried immature spike",
+                "synonyms": { "sanskrit": "Māgadhī", "english": "Long Pepper", "hindi": "Pipal" },
+                "description": { "macroscopic": "Spikes cylindrical.", "microscopic": "Starch grains." },
+                "identity_purity_strength": { "total_ash": "7%" },
+                "constituents": "Piperine",
+                "properties_action": { "rasa": "Kaṭu", "guna": "Laghu", "virya": "Anuṣṇāśīta", "vipaka": "Madhura",
+                    "karma": "Vātakaphahara, Rasāyana" },
+                "important_formulations": "Pippalyādi Āsava, Cyavanaprāśa",
+                "therapeutic_uses": "Śvāsa, Kāsa, Plīhā",
+                "dose": "1-3 g"
+            },
+            { "id": 2, "official_name": "Ashoka", "latin_name": "Saraca asoca", "plant_family": "Fabaceae",
+                "plant_subfamily": "Caesalpinioideae", "plant_part": "Stem bark",
+                "synonyms": { "sanskrit": "Kaṅkeli", "english": "Asoka Tree", "hindi": "Ashoka" },
+                "description": { "macroscopic": "Bark channelled.", "microscopic": "Cork layers." },
+                "identity_purity_strength": { "total_ash": "11%" },
+                "constituents": "Tannins",
+                "properties_action": { "rasa": "Kasāya", "guna": "Laghu", "virya": "Śīta", "vipaka": "Kaṭu",
+                    "karma": "Grāhī, Balya" },
+                "important_formulations": "Asokarista, Asokagrhta",
+                "therapeutic_uses": "Asrgdara, Apaci, Dāha",
+                "dose": "20-30 g"
+            }
+        ];
+
+        // ---- STATE ----
+        let activeDataset = [...FALLBACK_INITIAL_DATA];
+        let selectedFilters = {
+            rasa: [], guna: [], virya: [], vipaka: [],
+            plant_family: [], sub_family: [],
+            karma: [], uses: [], formulations: []
+        };
+        let searchKeyword = "";
+        let itemsLimit = 12;
+        let visibleCount = 12;
+        // Per-category search strings
+        let filterSearch = {
+            rasa: '', guna: '', virya: '', vipaka: '',
+            plant_family: '', sub_family: '',
+            karma: '', uses: '', formulations: ''
+        };
+        // Per-category expand/collapse state (for "Show more" lists)
+        let expanded = {
+            rasa: false, guna: false, virya: false, vipaka: false,
+            plant_family: false, sub_family: false,
+            karma: false, uses: false, formulations: false
+        };
+        const DEFAULT_VISIBLE = 5;
+
+        // ---- UTILITY ----
+        function toPhoneticKey(str) {
+            if (!str) return "";
+            let base = str.toLowerCase();
+            base = base.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            base = base.replace(/sh/g, "s").replace(/ś/g, "s").replace(/ṣ/g, "s")
+                .replace(/ch/g, "c").replace(/ū/g, "u").replace(/ī/g, "i")
+                .replace(/ā/g, "a").replace(/ṛ/g, "r").replace(/ṇ/g, "n")
+                .replace(/ḍ/g, "d").replace(/ṭ/g, "t").replace(/ñ/g, "n");
+            return base.replace(/[^a-z]/g, "").trim();
+        }
+
+        function normalizeText(str) {
+            if (!str) return "";
+            let norm = str.toLowerCase();
+            norm = norm.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            norm = norm.replace(/sh/g, 's').replace(/ś/g, 's').replace(/ṣ/g, 's')
+                .replace(/ch/g, 'c').replace(/ū/g, 'u').replace(/ī/g, 'i')
+                .replace(/ā/g, 'a').replace(/ṛ/g, 'r').replace(/ṇ/g, 'n')
+                .replace(/ḍ/g, 'd').replace(/ṭ/g, 't').replace(/ñ/g, 'n');
+            return norm.replace(/[^a-z0-9\u0900-\u097f\s]/g, "").trim();
+        }
+
+        // ---- CORRECT IAST -> DEVANAGARI TRANSLITERATION ----
+        // Builds proper conjuncts (via virama/halant) and vowel matras instead of
+        // stringing together independent letters, so "Grāhī" -> "ग्राही" (not
+        // "ग र आ ह ई" style broken output).
+        function toDevanagari(str) {
+            if (!str) return '';
+
+            // Consonants (each carries an inherent "a" sound in Devanagari)
+            const consonants = {
+                'k': 'क', 'kh': 'ख', 'g': 'ग', 'gh': 'घ', 'ṅ': 'ङ',
+                'c': 'च', 'ch': 'छ', 'j': 'ज', 'jh': 'झ', 'ñ': 'ञ',
+                'ṭ': 'ट', 'ṭh': 'ठ', 'ḍ': 'ड', 'ḍh': 'ढ', 'ṇ': 'ण',
+                't': 'त', 'th': 'थ', 'd': 'द', 'dh': 'ध', 'n': 'न',
+                'p': 'प', 'ph': 'फ', 'b': 'ब', 'bh': 'भ', 'm': 'म',
+                'y': 'य', 'r': 'र', 'l': 'ल', 'v': 'व',
+                'ś': 'श', 'ṣ': 'ष', 's': 'स', 'h': 'ह'
+            };
+            // Independent vowel forms (used at the start of a syllable / after another vowel)
+            const vowelsIndependent = {
+                'a': 'अ', 'ā': 'आ', 'i': 'इ', 'ī': 'ई', 'u': 'उ', 'ū': 'ऊ',
+                'ṛ': 'ऋ', 'ṝ': 'ॠ', 'ḷ': 'ऌ', 'ḹ': 'ॡ',
+                'e': 'ए', 'ai': 'ऐ', 'o': 'ओ', 'au': 'औ'
+            };
+            // Matra (vowel sign) forms - used right after a consonant, replacing its
+            // inherent "a". Note: plain "a" has NO matra (it's the implicit default).
+            const vowelsMatra = {
+                'ā': 'ा', 'i': 'ि', 'ī': 'ी', 'u': 'ु', 'ū': 'ू',
+                'ṛ': 'ृ', 'ṝ': 'ॄ', 'ḷ': 'ॢ', 'ḹ': 'ॣ',
+                'e': 'े', 'ai': 'ै', 'o': 'ो', 'au': 'ौ'
+            };
+            // Marks that attach after a vowel (don't need a conjunct/halant)
+            const marks = { 'ṃ': 'ं', 'ṁ': 'ं', 'ḥ': 'ः', "'": 'ऽ', '’': 'ऽ' };
+
+            const twoCharConsonants = ['kh', 'gh', 'ch', 'jh', 'ṭh', 'ḍh', 'th', 'dh', 'ph', 'bh'];
+            const twoCharVowels = ['ai', 'au'];
+
+            const lower = str.toLowerCase();
+            let result = '';
+            let pending = false; // true = previous consonant is still waiting for a vowel/halant
+            let i = 0;
+
+            while (i < lower.length) {
+                const two = lower.substr(i, 2);
+                const one = lower[i];
+
+                // Two-character aspirated consonants (kh, gh, th, dh, etc.)
+                if (consonants[two] && twoCharConsonants.includes(two)) {
+                    if (pending) result += '्';
+                    result += consonants[two];
+                    pending = true;
+                    i += 2;
+                    continue;
+                }
+
+                // Two-character vowels (ai, au)
+                if (twoCharVowels.includes(two)) {
+                    if (pending) {
+                        result += vowelsMatra[two];
+                        pending = false;
+                    } else {
+                        result += vowelsIndependent[two];
+                    }
+                    i += 2;
+                    continue;
+                }
+
+                // Anusvara / visarga / avagraha - attach directly, no conjunct needed
+                if (marks[one]) {
+                    result += marks[one];
+                    pending = false;
+                    i += 1;
+                    continue;
+                }
+
+                // Single-character consonant
+                if (consonants[one]) {
+                    if (pending) result += '्'; // join as a conjunct with previous consonant
+                    result += consonants[one];
+                    pending = true;
+                    i += 1;
+                    continue;
+                }
+
+                // Single-character vowel
+                if (vowelsIndependent[one]) {
+                    if (pending) {
+                        if (one !== 'a') result += vowelsMatra[one]; // "a" is inherent, no matra
+                        pending = false;
+                    } else {
+                        result += vowelsIndependent[one];
+                    }
+                    i += 1;
+                    continue;
+                }
+
+                // Anything else: space, hyphen, digits, punctuation - pass through
+                if (pending) {
+                    result += '्'; // close off a trailing consonant with a halant
+                    pending = false;
+                }
+                result += str[i];
+                i += 1;
+            }
+
+            // Word ends on a bare consonant (e.g. "Tridoṣajit" -> "...जित्")
+            if (pending) result += '्';
+
+            return result;
+        }
+
+        // ---- DYNAMIC REGISTRATION ----
+        function registerStandard(value, category) {
+            if (!value) return null;
+            const key = toPhoneticKey(value);
+            if (!STANDARDS[category]) STANDARDS[category] = {};
+            if (!STANDARDS[category][key]) {
+                // Generate Devanagari approximation
+                let dev = toDevanagari(value);
+                // If empty, fallback to value
+                if (!dev) dev = value;
+                STANDARDS[category][key] = { dev: dev, lat: value, eng: value };
+            }
+            return key;
+        }
+
+        // ---- EXTRACT STANDARD ATTRIBUTES ----
+        function extractStandardAttributes(rawText, category) {
+            if (!rawText) return [];
+            const vocab = STANDARDS[category];
+            if (!vocab) return [];
+            const parts = rawText.split(/[\s,;:\/()]+/);
+            const foundKeys = new Set();
+            parts.forEach(part => {
+                const cleaned = toPhoneticKey(part);
+                if (cleaned.length === 0) return;
+                Object.keys(vocab).forEach(key => {
+                    if (cleaned === key) foundKeys.add(key);
+                });
+            });
+            return Array.from(foundKeys);
+        }
+
+        // ---- DYNAMICALLY POPULATE STANDARDS FROM DATASET ----
+        function populateDynamicStandards(data) {
+            const categories = ['karma', 'uses', 'formulations'];
+            categories.forEach(cat => {
+                if (!STANDARDS[cat]) STANDARDS[cat] = {};
+                data.forEach(plant => {
+                    let raw = '';
+                    if (cat === 'karma' && plant.properties_action && plant.properties_action.karma) {
+                        raw = plant.properties_action.karma;
+                    } else if (cat === 'uses' && plant.therapeutic_uses) {
+                        raw = plant.therapeutic_uses;
+                    } else if (cat === 'formulations' && plant.important_formulations) {
+                        raw = plant.important_formulations;
+                    }
+                    if (raw) {
+                        const items = raw.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                        items.forEach(item => {
+                            const subParts = item.split(/[\s;:]+/);
+                            subParts.forEach(sub => {
+                                const trimmed = sub.trim();
+                                if (trimmed.length > 0) {
+                                    registerStandard(trimmed, cat);
+                                }
+                            });
+                        });
+                    }
+                });
+            });
+            // Also ensure plant_family and sub_family are registered
+            data.forEach(plant => {
+                if (plant.plant_family) registerStandard(plant.plant_family, 'plant_family');
+                const sub = plant.plant_subfamily || plant.sub_family || plant.subfamily || '';
+                if (sub) registerStandard(sub, 'sub_family');
+            });
+        }
+
+        // ---- TOAST ----
+        function showToast(message, type = "success") {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className =
+                `flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border text-xs font-semibold transform translate-y-2 opacity-0 transition-all duration-300 ${type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800'}`;
+            const icon = type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation';
+            toast.innerHTML = `<i class="fa-solid ${icon} text-sm"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 50);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // ---- FILTER LOGIC ----
+        function resetFilters() {
+            selectedFilters = {
+                rasa: [], guna: [], virya: [], vipaka: [],
+                plant_family: [], sub_family: [],
+                karma: [], uses: [], formulations: []
+            };
+            document.getElementById('search-input').value = "";
+            searchKeyword = "";
+            visibleCount = itemsLimit;
+            // Reset search inputs
+            document.querySelectorAll('.filter-search').forEach(inp => inp.value = '');
+            Object.keys(filterSearch).forEach(k => filterSearch[k] = '');
+            initializeDynamicFilters();
+            renderActiveFilters();
+            renderGrid();
+            showToast("Search filters and queries reset.");
+        }
+
+        function togglePillFilter(category, valKey) {
+            const list = selectedFilters[category];
+            const idx = list.indexOf(valKey);
+            if (idx > -1) list.splice(idx, 1);
+            else list.push(valKey);
+            visibleCount = itemsLimit;
+            initializeDynamicFilters();
+            renderActiveFilters();
+            renderGrid();
+        }
+
+        function getFacetPool(excludeCategory = null) {
+            const cleanQuery = normalizeText(searchKeyword);
+            return activeDataset.filter(plant => {
+                // Search
+                if (cleanQuery) {
+                    const devName = DEVANAGARI_MAP[plant.official_name] || '';
+                    const normOfficial = normalizeText(plant.official_name);
+                    const normLatin = normalizeText(plant.latin_name);
+                    const normDev = devName;
+                    const matchOfficial = normOfficial.includes(cleanQuery);
+                    const matchLatin = normLatin.includes(cleanQuery);
+                    const matchDev = normDev.includes(cleanQuery);
+                    let matchSynonyms = false;
+                    if (plant.synonyms) {
+                        matchSynonyms = Object.values(plant.synonyms).some(syn => syn && normalizeText(syn).includes(
+                            cleanQuery));
+                    }
+                    if (!matchOfficial && !matchLatin && !matchDev && !matchSynonyms) return false;
+                }
+                // Filters
+                for (const cat of Object.keys(selectedFilters)) {
+                    if (cat === excludeCategory) continue;
+                    const activeValues = selectedFilters[cat];
+                    if (activeValues.length === 0) continue;
+                    let plantAttributes = [];
+                    if (plant.properties_action) {
+                        if (['rasa', 'guna', 'virya', 'vipaka', 'karma'].includes(cat)) {
+                            plantAttributes = extractStandardAttributes(plant.properties_action[cat], cat);
+                        }
+                    }
+                    if (cat === 'plant_family' && plant.plant_family) {
+                        plantAttributes = extractStandardAttributes(plant.plant_family, 'plant_family');
+                    }
+                    if (cat === 'sub_family') {
+                        const subVal = plant.plant_subfamily || plant.sub_family || plant.subfamily || '';
+                        plantAttributes = extractStandardAttributes(subVal, 'sub_family');
+                    }
+                    if (cat === 'uses') {
+                        plantAttributes = extractStandardAttributes(plant.therapeutic_uses, 'uses');
+                    }
+                    if (cat === 'formulations') {
+                        plantAttributes = extractStandardAttributes(plant.important_formulations, 'formulations');
+                    }
+                    if (!activeValues.every(val => plantAttributes.includes(val))) return false;
+                }
+                return true;
+            });
+        }
+
+        function getFilteredSubset() {
+            return getFacetPool(null);
+        }
+
+        // ---- RENDER FILTER PILLS (with search and alphabetical sort) ----
+        function renderStandardPillCategory(containerId, category, countsMap) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const vocab = STANDARDS[category];
+            if (!vocab) return;
+
+            // Get search string for this category
+            const searchStr = filterSearch[category] || '';
+            const searchLower = searchStr.toLowerCase();
+
+            // Sort entries alphabetically by Latin name
+            const entries = Object.entries(vocab).sort((a, b) => a[1].lat.localeCompare(b[1].lat));
+
+            // Apply the per-category search filter first
+            const filteredEntries = entries.filter(([valKey, info]) => {
+                return info.lat.toLowerCase().includes(searchLower) ||
+                    info.dev.toLowerCase().includes(searchLower) ||
+                    info.eng.toLowerCase().includes(searchLower) ||
+                    valKey.includes(searchLower);
+            });
+
+            const excludeDevanagari = (category === 'plant_family' || category === 'sub_family');
+            // Karma / Therapeutic Uses / Formulations: drop Devanagari entirely and
+            // show the plain name alongside its English meaning instead.
+            const showEnglishMeaning = (category === 'karma' || category === 'uses' || category === 'formulations');
+
+            // Collapse: show only the first DEFAULT_VISIBLE entries unless expanded
+            const isExpanded = expanded[category] || false;
+            const visibleLimit = isExpanded ? filteredEntries.length : Math.min(filteredEntries.length, DEFAULT_VISIBLE);
+
+            let html = '';
+            for (let i = 0; i < visibleLimit; i++) {
+                const [valKey, info] = filteredEntries[i];
+                const count = countsMap[valKey] || 0;
+                const isActive = selectedFilters[category].includes(valKey);
+                const baseClass = isActive ? (
+                    category === 'rasa' ? 'bg-rose-700 text-white border-rose-800 active-pill' :
+                    category === 'guna' ? 'bg-amber-600 text-white border-amber-700 active-pill' :
+                    category === 'virya' ? 'bg-blue-600 text-white border-blue-700 active-pill' :
+                    category === 'vipaka' ? 'bg-purple-600 text-white border-purple-700 active-pill' :
+                    category === 'plant_family' ? 'bg-indigo-600 text-white border-indigo-700 active-pill' :
+                    category === 'sub_family' ? 'bg-teal-600 text-white border-teal-700 active-pill' :
+                    category === 'karma' ? 'bg-emerald-600 text-white border-emerald-700 active-pill' :
+                    category === 'uses' ? 'bg-cyan-600 text-white border-cyan-700 active-pill' :
+                    'bg-amber-600 text-white border-amber-700 active-pill'
+                ) : (
+                    category === 'rasa' ? 'bg-rose-50/60 border-rose-100 text-rose-800 hover:bg-rose-100/80' :
+                    category === 'guna' ? 'bg-amber-50/60 border-amber-100 text-amber-800 hover:bg-amber-100/80' :
+                    category === 'virya' ? 'bg-blue-50/60 border-blue-100 text-blue-800 hover:bg-blue-100/80' :
+                    category === 'vipaka' ? 'bg-purple-50/60 border-purple-100 text-purple-800 hover:bg-purple-100/80' :
+                    category === 'plant_family' ? 'bg-indigo-50/60 border-indigo-100 text-indigo-800 hover:bg-indigo-100/80' :
+                    category === 'sub_family' ? 'bg-teal-50/60 border-teal-100 text-teal-800 hover:bg-teal-100/80' :
+                    category === 'karma' ? 'bg-emerald-50/60 border-emerald-100 text-emerald-800 hover:bg-emerald-100/80' :
+                    category === 'uses' ? 'bg-cyan-50/60 border-cyan-100 text-cyan-800 hover:bg-cyan-100/80' :
+                    'bg-amber-50/60 border-amber-100 text-amber-800 hover:bg-amber-100/80'
+                );
+                const checkIcon = isActive ? '<i class="fa-solid fa-check text-[9px]"></i> ' : '';
+                const hasRealMeaning = info.eng && info.eng.trim().toLowerCase() !== info.lat.trim().toLowerCase();
+
+                let namePart, tooltip;
+                if (showEnglishMeaning) {
+                    // No Devanagari here - just the name, plus its English meaning if known
+                    namePart = `
+                        <span class="text-[10px] font-semibold font-sans">${info.lat}</span>
+                        ${hasRealMeaning ? `<span class="text-[10px] opacity-75 font-sans italic">(${info.eng})</span>` : ''}
+                    `;
+                    tooltip = hasRealMeaning ? `${info.lat} — ${info.eng}` : info.lat;
+                } else {
+                    const devPart = excludeDevanagari ? '' :
+                        `<span class="font-devanagari text-sm font-semibold">${info.dev}</span>`;
+                    namePart = `
+                        ${devPart}
+                        <span class="text-[10px] opacity-75 font-sans">${excludeDevanagari ? '' : '('}${info.lat}${excludeDevanagari ? '' : ')'}</span>
+                    `;
+                    tooltip = `${info.lat} (${info.eng})`;
+                }
+
+                html += `
+                    <button onclick="togglePillFilter('${category}', '${valKey}')" 
+                        class="px-2.5 py-1 text-xs rounded-xl border transition-all flex items-center gap-1 cursor-pointer select-none font-medium ${baseClass}"
+                        title="${tooltip}">
+                        ${checkIcon}
+                        ${namePart}
+                        <span class="text-[9px] opacity-50 font-light font-sans">(${count})</span>
+                    </button>
+                `;
+            }
+            container.innerHTML = html;
+
+            // Update the "Show more / Show less" toggle for this category
+            const wrapper = document.getElementById(containerId + '-wrapper');
+            if (wrapper) {
+                const showMoreBtn = wrapper.parentElement.querySelector('.show-more-btn');
+                if (showMoreBtn) {
+                    if (filteredEntries.length > DEFAULT_VISIBLE) {
+                        showMoreBtn.style.display = 'inline-block';
+                        showMoreBtn.textContent = isExpanded ?
+                            'Show less' :
+                            `Show more (${filteredEntries.length - DEFAULT_VISIBLE})`;
+                    } else {
+                        showMoreBtn.style.display = 'none';
+                    }
+                }
+                if (isExpanded) wrapper.classList.add('expanded');
+                else wrapper.classList.remove('expanded');
+            }
+        }
+
+        // ---- INIT DYNAMIC FILTERS ----
+        function initializeDynamicFilters() {
+            const categories = ['rasa', 'guna', 'virya', 'vipaka', 'plant_family', 'sub_family', 'karma', 'uses',
+                'formulations'
+            ];
+            const counts = {};
+            categories.forEach(cat => {
+                counts[cat] = {};
+                if (STANDARDS[cat]) Object.keys(STANDARDS[cat]).forEach(k => counts[cat][k] = 0);
+                activeDataset.forEach(plant => {
+                    let plantAttributes = [];
+                    if (plant.properties_action) {
+                        if (['rasa', 'guna', 'virya', 'vipaka', 'karma'].includes(cat)) {
+                            plantAttributes = extractStandardAttributes(plant.properties_action[cat], cat);
+                        }
+                    }
+                    if (cat === 'plant_family' && plant.plant_family) {
+                        plantAttributes = extractStandardAttributes(plant.plant_family, 'plant_family');
+                    }
+                    if (cat === 'sub_family') {
+                        const subVal = plant.plant_subfamily || plant.sub_family || plant.subfamily || '';
+                        plantAttributes = extractStandardAttributes(subVal, 'sub_family');
+                    }
+                    if (cat === 'uses') {
+                        plantAttributes = extractStandardAttributes(plant.therapeutic_uses, 'uses');
+                    }
+                    if (cat === 'formulations') {
+                        plantAttributes = extractStandardAttributes(plant.important_formulations, 'formulations');
+                    }
+                    plantAttributes.forEach(val => {
+                        if (counts[cat][val] !== undefined) counts[cat][val]++;
+                    });
+                });
+            });
+
+            categories.forEach(cat => {
+                const badge = document.getElementById(`count-badge-${cat}`);
+                if (badge) badge.innerText = selectedFilters[cat].length;
+            });
+
+            // Render each category with search
+            const pillMap = {
+                'pills-rasa': 'rasa',
+                'pills-guna': 'guna',
+                'pills-virya': 'virya',
+                'pills-vipaka': 'vipaka',
+                'pills-plant_family': 'plant_family',
+                'pills-sub_family': 'sub_family',
+                'pills-karma': 'karma',
+                'pills-uses': 'uses',
+                'pills-formulations': 'formulations'
+            };
+            Object.entries(pillMap).forEach(([containerId, cat]) => {
+                renderStandardPillCategory(containerId, cat, counts[cat]);
+            });
+        }
+
+        // ---- SORT ----
+        function handleSort() {
+            const val = document.getElementById('sort-select').value;
+            if (val === 'name-asc') activeDataset.sort((a, b) => a.official_name.localeCompare(b.official_name));
+            else if (val === 'name-desc') activeDataset.sort((a, b) => b.official_name.localeCompare(a.official_name));
+            else if (val === 'id-asc') activeDataset.sort((a, b) => a.id - b.id);
+            else if (val === 'family-asc') activeDataset.sort((a, b) => (a.plant_family || '').localeCompare(b.plant_family ||
+                ''));
+            renderGrid();
+        }
+
+        // ---- RENDER ACTIVE FILTERS ----
+        function renderActiveFilters() {
+            const container = document.getElementById('active-badges-container');
+            if (!container) return;
+            let badgesHtml = '';
+            let totalCount = 0;
+            const excludeDevSet = new Set(['plant_family', 'sub_family']);
+            Object.keys(selectedFilters).forEach(cat => {
+                selectedFilters[cat].forEach(valKey => {
+                    totalCount++;
+                    let label = valKey;
+                    if (STANDARDS[cat] && STANDARDS[cat][valKey]) {
+                        const info = STANDARDS[cat][valKey];
+                        const isBotanical = excludeDevSet.has(cat);
+                        label = isBotanical ? `${info.lat}` : `${info.dev} (${info.lat})`;
+                    }
+                    badgesHtml += `
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-herbal-100 text-herbal-800 border border-herbal-200 shadow-sm animate-fade-in">
+                            <span class="capitalize text-herbal-600/70 font-light mr-0.5">${cat.replace('_', ' ')}:</span>
+                            <span class="font-medium">${label}</span>
+                            <button onclick="togglePillFilter('${cat}', '${valKey}'); renderActiveFilters();" class="text-herbal-600 hover:text-rose-600 transition-colors ml-1">
+                                <i class="fa-solid fa-circle-xmark"></i>
+                            </button>
+                        </span>
+                    `;
+                });
+            });
+            if (totalCount > 0) {
+                badgesHtml +=
+                    `<button onclick="resetFilters()" class="text-xs font-bold text-slate-400 hover:text-rose-600 underline ml-2 transition-colors">Clear All</button>`;
+            }
+            container.innerHTML = badgesHtml;
+        }
+
+        // ---- RENDER GRID ----
+        function renderGrid() {
+            const grid = document.getElementById('plants-grid');
+            const emptyState = document.getElementById('empty-state');
+            const loadMoreContainer = document.getElementById('load-more-container');
+            const countLabel = document.getElementById('result-count');
+
+            const filtered = getFilteredSubset();
+            countLabel.innerText = `Found ${filtered.length} Plant${filtered.length === 1 ? '' : 's'}`;
+
+            if (filtered.length === 0) {
+                if (grid) grid.innerHTML = '';
+                if (emptyState) emptyState.classList.remove('hidden');
+                if (loadMoreContainer) loadMoreContainer.classList.add('hidden');
+                return;
+            }
+            if (emptyState) emptyState.classList.add('hidden');
+
+            const visibleSubset = filtered.slice(0, visibleCount);
+            let cardsHtml = '';
+            visibleSubset.forEach(plant => {
+                const devName = DEVANAGARI_MAP[plant.official_name] || 'द्रव्य';
+                const latin = plant.latin_name || 'N/A';
+                const family = plant.plant_family || 'Not Stated';
+                const subFamily = plant.plant_subfamily || plant.sub_family || plant.subfamily || '';
+                const part = plant.plant_part || 'Whole plant';
+
+                let propertiesRibbonHtml = '---';
+                if (plant.properties_action) {
+                    const parsedRasas = extractStandardAttributes(plant.properties_action.rasa, 'rasa');
+                    const parsedViryas = extractStandardAttributes(plant.properties_action.virya, 'virya');
+                    const parsedVipakas = extractStandardAttributes(plant.properties_action.vipaka, 'vipaka');
+
+                    const rasaBadges = parsedRasas.map(k => {
+                        const info = STANDARDS.rasa[k];
+                        return `<span class="bg-rose-50 text-rose-700 text-[10px] px-2 py-0.5 rounded-full font-semibold border border-rose-100" title="${info.lat} (${info.eng})"><span class="font-devanagari">${info.dev}</span> (${info.lat})</span>`;
+                    }).join('');
+                    const viryaBadges = parsedViryas.map(k => {
+                        const info = STANDARDS.virya[k];
+                        return `<span class="bg-blue-50 text-blue-700 text-[10px] px-2 py-0.5 rounded-full font-semibold border border-blue-100" title="${info.lat} (${info.eng})"><span class="font-devanagari">${info.dev}</span> (${info.lat})</span>`;
+                    }).join('');
+                    const vipakaBadges = parsedVipakas.map(k => {
+                        const info = STANDARDS.vipaka[k];
+                        return `<span class="bg-purple-50 text-purple-700 text-[10px] px-2 py-0.5 rounded-full font-semibold border border-purple-100" title="${info.lat} (${info.eng})"><span class="font-devanagari">${info.dev}</span> (${info.lat})</span>`;
+                    }).join('');
+                    propertiesRibbonHtml = `${rasaBadges}${viryaBadges}${vipakaBadges}`;
+                }
+
+                cardsHtml += `
+                    <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden card-anim flex flex-col h-full shadow-sm">
+                        <div class="bg-gradient-to-r from-herbal-800 to-herbal-900 p-4 relative text-white">
+                            <span class="absolute top-4 right-4 bg-amber-accent text-herbal-900 text-[9px] font-extrabold tracking-widest px-2 py-0.5 rounded-md shadow-sm font-sans">ID #${plant.id}</span>
+                            <span class="text-[10px] font-bold text-amber-accent/80 tracking-wider font-devanagari">${devName}</span>
+                            <h4 class="text-base font-bold text-white leading-tight font-sans truncate">${plant.official_name}</h4>
+                            <p class="text-[10px] text-herbal-100 mt-1 italic tracking-wide truncate max-w-[85%] font-sans">${latin}</p>
+                        </div>
+                        <div class="p-5 flex-1 flex flex-col justify-between gap-4 font-sans">
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between text-[11px] text-slate-500">
+                                    <span class="font-medium"><i class="fa-solid fa-folder text-herbal-600/70 mr-1.5"></i> Family:</span>
+                                    <span class="font-semibold text-slate-700 truncate max-w-[60%]">${family}${subFamily ? ` (${subFamily})` : ''}</span>
+                                </div>
+                                <div class="flex items-center justify-between text-[11px] text-slate-500">
+                                    <span class="font-medium"><i class="fa-solid fa-flask text-herbal-600/70 mr-1.5"></i> Part Used:</span>
+                                    <span class="font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-100 truncate max-w-[60%]">${part}</span>
+                                </div>
+                                <div class="space-y-1.5 pt-2 border-t border-slate-100">
+                                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Properties (Rasadi)</span>
+                                    <div class="flex flex-wrap gap-1.5">${propertiesRibbonHtml}</div>
+                                </div>
+                            </div>
+                            <button onclick="openModal(${plant.id})" class="w-full bg-slate-50 hover:bg-herbal-800 hover:text-white border border-slate-150 text-slate-700 text-xs font-bold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-circle-info text-[10px]"></i> View Details
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            if (grid) grid.innerHTML = cardsHtml;
+            if (loadMoreContainer) {
+                if (filtered.length > visibleCount) loadMoreContainer.classList.remove('hidden');
+                else loadMoreContainer.classList.add('hidden');
+            }
+        }
+
+        function loadMoreHerbs() {
+            visibleCount += itemsLimit;
+            renderGrid();
+        }
+
+        // ---- MODAL ----
+        function openModal(plantId) {
+            const plant = activeDataset.find(p => p.id === plantId);
+            if (!plant) return;
+            const modal = document.getElementById('detail-modal');
+            const wrapper = modal.querySelector('div');
+
+            document.getElementById('modal-official-name').innerText = plant.official_name;
+            document.getElementById('modal-devanagari-name').innerText = DEVANAGARI_MAP[plant.official_name] || 'द्रव्य';
+            document.getElementById('modal-latin-name').innerText = plant.latin_name || 'Not Listed';
+
+            const displayFamily = plant.plant_family || '---';
+            const displaySub = plant.plant_subfamily || plant.sub_family || plant.subfamily || '';
+            document.getElementById('modal-plant-family').innerText =
+                `${displayFamily}${displaySub ? ` / ${displaySub}` : ''}`;
+            document.getElementById('modal-plant-part').innerText = plant.plant_part || '---';
+
+            const mapStandardizedDisplay = (strVal, cat) => {
+                const keys = extractStandardAttributes(strVal, cat);
+                if (keys.length === 0) return '---';
+                return keys.map(k => {
+                    const info = STANDARDS[cat][k];
+                    return `${info.dev} (${info.lat} - ${info.eng})`;
+                }).join(', ');
+            };
+
+            if (plant.properties_action) {
+                document.getElementById('modal-rasa').innerText = mapStandardizedDisplay(plant.properties_action.rasa,
+                    'rasa');
+                document.getElementById('modal-guna').innerText = mapStandardizedDisplay(plant.properties_action.guna,
+                    'guna');
+                document.getElementById('modal-virya').innerText = mapStandardizedDisplay(plant.properties_action.virya,
+                    'virya');
+                document.getElementById('modal-vipaka').innerText = mapStandardizedDisplay(plant.properties_action
+                    .vipaka, 'vipaka');
+            } else {
+                ['modal-rasa', 'modal-guna', 'modal-virya', 'modal-vipaka'].forEach(id => document.getElementById(id)
+                    .innerText = '---');
+            }
+
+            document.getElementById('modal-macro-desc').innerText = plant.description ? (plant.description.macroscopic ||
+                'Macroscopic details not stated.') : '---';
+            document.getElementById('modal-micro-desc').innerText = plant.description ? (plant.description.microscopic ||
+                'Microscopic details not stated.') : '---';
+            document.getElementById('modal-constituents').innerText = plant.constituents ||
+                'No primary chemical data stated.';
+            document.getElementById('modal-dose').innerText = plant.dose || 'Consult standard Ayurvedic formulary limits.';
+            document.getElementById('modal-formulations').innerText = plant.important_formulations ||
+                'No key clinical formulations stated.';
+
+            const specsGrid = document.getElementById('modal-specifications-grid');
+            if (plant.identity_purity_strength) {
+                let specsHtml = '';
+                Object.entries(plant.identity_purity_strength).forEach(([key, val]) => {
+                    const cleanKey = key.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                    specsHtml += `
+                        <div class="p-2.5 bg-white border border-slate-200 rounded-xl">
+                            <span class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider">${cleanKey}</span>
+                            <span class="text-xs font-semibold text-slate-800 block mt-0.5">${val}</span>
+                        </div>
+                    `;
+                });
+                specsGrid.innerHTML = specsHtml;
+            } else {
+                specsGrid.innerHTML =
+                    `<span class="col-span-2 text-xs italic text-slate-400 p-2">No API identity specifications stated.</span>`;
+            }
+
+            const buildBadges = (str, cat, colorClass) => {
+                const keys = extractStandardAttributes(str, cat);
+                if (keys.length === 0) return `<span class="text-xs italic text-slate-400">None stated.</span>`;
+                return keys.map(k => {
+                    const info = STANDARDS[cat][k];
+                    const hasRealMeaning = info.eng && info.eng.trim().toLowerCase() !== info.lat.trim().toLowerCase();
+                    const label = hasRealMeaning ? `${info.lat} <span class="opacity-70 italic">(${info.eng})</span>` : info.lat;
+                    return `<span class="px-2.5 py-1 rounded-xl text-xs font-semibold border ${colorClass}" title="${info.lat}${hasRealMeaning ? ' — ' + info.eng : ''}">${label}</span>`;
+                }).join('');
+            };
+            document.getElementById('modal-karma-tags').innerHTML = plant.properties_action ? buildBadges(plant.properties_action
+                .karma, 'karma', 'bg-emerald-50 border-emerald-200 text-emerald-800') : '---';
+            document.getElementById('modal-uses-tags').innerHTML = buildBadges(plant.therapeutic_uses, 'uses',
+                'bg-cyan-50 border-cyan-200 text-cyan-800');
+
+            const vernacularContainer = document.getElementById('modal-vernacular-list');
+            if (plant.synonyms) {
+                let vernHtml = '<div class="grid grid-cols-2 gap-2 border-t border-slate-100 pt-2">';
+                Object.entries(plant.synonyms).forEach(([lang, name]) => {
+                    vernHtml += `
+                        <div class="flex flex-col p-2 bg-slate-50/50 rounded-lg border border-slate-100">
+                            <span class="text-[9px] uppercase font-bold text-slate-400 tracking-wider">${lang}</span>
+                            <span class="text-xs font-semibold text-slate-700 mt-0.5">${name || '---'}</span>
+                        </div>
+                    `;
+                });
+                vernHtml += '</div>';
+                vernacularContainer.innerHTML = vernHtml;
+            } else {
+                vernacularContainer.innerHTML = `<span class="text-xs italic text-slate-400">None mapped.</span>`;
+            }
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                wrapper.classList.remove('scale-95', 'opacity-0');
+                wrapper.classList.add('scale-100', 'opacity-100');
+            }, 50);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('detail-modal');
+            const wrapper = modal.querySelector('div');
+            wrapper.classList.remove('scale-100', 'opacity-100');
+            wrapper.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 250);
+        }
+
+        // ---- MOBILE TOGGLE ----
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleBtn = document.getElementById('filter-toggle');
+            const sidebar = document.getElementById('filter-sidebar');
+            if (toggleBtn && sidebar) {
+                toggleBtn.addEventListener('click', function() {
+                    sidebar.classList.toggle('open');
+                    this.classList.toggle('active');
+                });
+                if (window.innerWidth >= 1024) {
+                    sidebar.classList.add('open');
+                }
+                window.addEventListener('resize', function() {
+                    if (window.innerWidth >= 1024) {
+                        sidebar.classList.add('open');
+                        toggleBtn.classList.remove('active');
+                    }
+                });
+            }
+
+            // Attach search input listeners
+            document.querySelectorAll('.filter-search').forEach(input => {
+                input.addEventListener('input', function(e) {
+                    const cat = this.dataset.category;
+                    if (cat) {
+                        filterSearch[cat] = this.value;
+                        // Re-render only this category's pills
+                        const counts = {};
+                        // We need counts for this category from the full dataset
+                        // We'll recalc counts for all categories or just this one.
+                        // For simplicity, we'll re-run initializeDynamicFilters which updates all.
+                        // But that would re-render all, which is okay.
+                        initializeDynamicFilters();
+                        // Also update the active filters and grid? No, search in filters doesn't affect results,
+                        // only the pills display.
+                        // But the pills themselves should show the count based on the full dataset (already done).
+                        // We already have counts computed from full dataset in initializeDynamicFilters.
+                        // So re-run init.
+                        // However, we need to keep the search strings.
+                        // We'll call initializeDynamicFilters which will re-render all pills with current search.
+                        // That's fine.
+                        initializeDynamicFilters();
+                    }
+                });
+            });
+
+            // Attach "Show more / Show less" toggle listeners
+            document.querySelectorAll('.show-more-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const cat = this.dataset.category;
+                    if (cat) {
+                        expanded[cat] = !expanded[cat];
+                        initializeDynamicFilters();
+                    }
+                });
+            });
+        });
+
+        // ---- DATA LOAD ----
+        async function loadDataset() {
+            const badge = document.getElementById('data-status-badge');
+            const text = document.getElementById('status-text');
+            const ping = document.getElementById('status-ping');
+            try {
+                const response = await fetch('plants.json');
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                if (Array.isArray(data) && data.length > 0) {
+                    activeDataset = data;
+                    if (badge) badge.className =
+                        "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+                    if (ping) ping.className = "w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse";
+                    if (text) text.innerText = `Active Database: (${data.length} Herbs)`;
+                    showToast(`Successfully loaded ${data.length} plants from plants.json!`, "success");
+                } else throw new Error("Parsed data array is empty.");
+            } catch (err) {
+                console.warn("Could not retrieve plants.json, using fallback.", err);
+                activeDataset = [...FALLBACK_INITIAL_DATA];
+                if (badge) badge.className =
+                    "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-500 border border-amber-500/20";
+                if (ping) ping.className = "w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse";
+                if (text) text.innerText = "Offline Mode: Embedded Database";
+                showToast("Serving embedded Ayurvedic dataset.", "success");
+            }
+
+            // Populate dynamic standards from the dataset
+            populateDynamicStandards(activeDataset);
+
+            initializeDynamicFilters();
+            renderActiveFilters();
+            renderGrid();
+        }
+
+        // ---- WINDOW ONLOAD ----
+        window.onload = function() {
+            loadDataset();
+            // The search input is now always visible, so we attach listener directly
+            document.getElementById('search-input').addEventListener('input', function(e) {
+                searchKeyword = e.target.value;
+                initializeDynamicFilters();
+                renderGrid();
+            });
+        };
+    </script>
+
+</body>
+</html>
